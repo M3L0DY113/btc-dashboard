@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC TRADING TERMINAL</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#080808;
+  --white:#f7f5f0;
+  --gray:#e8e5de;
+  --mid:#999;
+  --green:#007a3d;
+  --green-bg:#e8f5ee;
+  --red:#c8001a;
+  --red-bg:#fce8eb;
+  --amber:#b87800;
+  --amber-bg:#fdf5e0;
+  --line:1px solid #080808;
+  --line-light:1px solid #d8d5ce;
+}
+body{
+  background:var(--white);
+  color:var(--black);
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;
+  min-height:100vh;
+}
+
+/* NAV */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 32px;
+  border-bottom:var(--line);
+  position:sticky;top:0;background:var(--white);z-index:100;
+}
+.nav-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;letter-spacing:3px;color:var(--black);
+}
+.nav-meta{display:flex;gap:24px;align-items:center;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mid)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.nav-right{display:flex;gap:16px;align-items:center}
+.refresh-btn{
+  font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;padding:8px 20px;
+  background:var(--black);color:var(--white);border:none;cursor:pointer;
+  transition:opacity .15s;
+}
+.refresh-btn:hover{opacity:.75}
+
+/* HERO PRICE */
+.hero{
+  padding:32px 32px 0;
+  border-bottom:var(--line);
+}
+.hero-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mid);margin-bottom:8px}
+.hero-price{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(64px,10vw,120px);
+  line-height:0.9;
+  letter-spacing:-1px;
+  color:var(--black);
+}
+.hero-row{display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap;padding-bottom:20px}
+.hero-change{font-size:18px;font-weight:500;padding:6px 14px;letter-spacing:0}
+.up-tag{background:var(--green-bg);color:var(--green)}
+.down-tag{background:var(--red-bg);color:var(--red)}
+.hero-signal{
+  margin-left:auto;
+  font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  padding:8px 20px;border:var(--line);font-weight:500;
+}
+.sig-wait{border-color:var(--black);color:var(--black)}
+.sig-buy{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.sig-sell{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.hero-time{font-size:11px;color:var(--mid);letter-spacing:1px;align-self:flex-end}
+
+/* STATS ROW */
+.stats-row{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-bottom:var(--line);
+}
+.stat-box{
+  padding:20px 24px;border-right:var(--line);
+}
+.stat-box:last-child{border-right:none}
+.stat-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--mid);margin-bottom:8px}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;line-height:1}
+.stat-sub{font-size:11px;color:var(--mid);margin-top:4px}
+.rsi-track{height:4px;background:var(--gray);margin:8px 0 4px;position:relative}
+.rsi-fill{height:100%;position:absolute;left:0;top:0;transition:width .8s}
+.rsi-zones{display:flex;justify-content:space-between;font-size:9px;color:var(--mid);letter-spacing:1px}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}
+
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:2fr 1fr;border-bottom:var(--line)}
+
+/* CHART AREA */
+.chart-area{border-right:var(--line);padding:24px}
+.section-label{
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--mid);margin-bottom:16px;display:flex;justify-content:space-between;
+}
+canvas{display:block;width:100%!important}
+
+/* SIGNAL PANEL */
+.signal-panel{padding:24px}
+.signal-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;border-bottom:var(--line-light);
+  font-size:12px;
+}
+.signal-row:last-child{border:none}
+.signal-key{letter-spacing:1px;text-transform:uppercase;font-size:10px;color:var(--mid)}
+.signal-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500}
+.badge{padding:3px 10px;font-size:10px;letter-spacing:1px}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-gray{background:var(--gray);color:var(--mid)}
+
+/* INDICATORS */
+.ind-grid{display:grid;grid-template-columns:1fr 1fr;border-bottom:var(--line)}
+.ind-box{padding:20px 24px}
+.ind-box:first-child{border-right:var(--line)}
+
+/* BOTTOM */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr}
+.bottom-box{padding:24px}
+.bottom-box:first-child{border-right:var(--line)}
+
+/* STRATEGY */
+.strategy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.strategy-card{padding:16px;border:var(--line-light)}
+.s-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;font-weight:500}
+.s-body{font-size:11px;color:var(--mid);line-height:1.8}
+
+/* LOG */
+.log-area{max-height:200px;overflow-y:auto;margin-top:12px}
+.log-entry{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:var(--line-light);font-size:11px}
+.log-time{font-family:'DM Mono',monospace;color:var(--mid);min-width:72px;flex-shrink:0}
+.log-mark{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.log-msg{color:var(--black);line-height:1.4}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--gray)}
+
+/* FOOTER */
+footer{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 32px;border-top:var(--line);
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--mid);
+}
+.countdown-display{font-family:'DM Mono',monospace;color:var(--black);font-size:12px}
+
+/* TICKER MARQUEE */
+.ticker{
+  border-top:var(--line);border-bottom:var(--line);
+  overflow:hidden;white-space:nowrap;padding:10px 0;
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  background:var(--black);color:var(--white);
+}
+.ticker-inner{display:inline-block;animation:ticker 25s linear infinite}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-sep{margin:0 24px;opacity:.4}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">BTC TERMINAL</div>
+  <div class="nav-meta">
+    <span><span class="live-dot"></span>TESTNET LIVE</span>
+    <span id="navTime">—</span>
+  </div>
+  <div class="nav-right">
+    <span style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mid)" id="countdown">REFRESH IN 60s</span>
+    <button class="refresh-btn" onclick="loadData()">↻ REFRESH</button>
+  </div>
+</nav>
+
+<!-- HERO PRICE -->
+<div class="hero">
+  <div class="hero-label">BTC / USDT · 15MIN CHART · RSI+MACD STRATEGY</div>
+  <div class="hero-row">
+    <div class="price-wrap">
+      <div class="hero-price" id="heroPrice">—</div>
+    </div>
+    <span class="hero-change" id="heroChange">—</span>
+    <span class="hero-time" id="heroTime">LAST UPDATE —</span>
+    <div class="hero-signal sig-wait" id="heroSignal">LOADING</div>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner" id="tickerInner">
+    BTC/USDT <span class="ticker-sep">·</span>
+    RSI STRATEGY <span class="ticker-sep">·</span>
+    MACD CROSSOVER <span class="ticker-sep">·</span>
+    BINANCE TESTNET <span class="ticker-sep">·</span>
+    AUTO REFRESH 60S <span class="ticker-sep">·</span>
+    PAPER TRADING ONLY <span class="ticker-sep">·</span>
+    BTC/USDT <span class="ticker-sep">·</span>
+    RSI STRATEGY <span class="ticker-sep">·</span>
+    MACD CROSSOVER <span class="ticker-sep">·</span>
+    BINANCE TESTNET <span class="ticker-sep">·</span>
+    AUTO REFRESH 60S <span class="ticker-sep">·</span>
+    PAPER TRADING ONLY <span class="ticker-sep">·</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-box">
+    <div class="stat-label">RSI · 14</div>
+    <div class="stat-num" id="rsiNum">—</div>
+    <div class="rsi-track"><div class="rsi-fill" id="rsiFill"></div></div>
+    <div class="rsi-zones"><span>OVERSOLD &lt;40</span><span>NEUTRAL</span><span>OVERBOUGHT &gt;60</span></div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">MACD LINE</div>
+    <div class="stat-num" id="macdNum" style="font-size:28px">—</div>
+    <div class="stat-sub" id="macdSub">—</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">USDT BALANCE</div>
+    <div class="stat-num" style="color:var(--black)">10,000</div>
+    <div class="stat-sub">TESTNET · SIMULATED</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">24H HIGH / LOW</div>
+    <div class="stat-num" id="highNum" style="font-size:22px">—</div>
+    <div class="stat-sub" id="volSub">—</div>
+  </div>
+</div>
+
+<!-- MAIN: CHART + SIGNAL -->
+<div class="main-grid">
+  <div class="chart-area">
+    <div class="section-label">
+      <span>PRICE ACTION · BTC/USDT · 15M</span>
+      <span id="chartMeta" style="font-family:'DM Mono',monospace">—</span>
+    </div>
+    <canvas id="priceChart" height="160"></canvas>
+  </div>
+  <div class="signal-panel">
+    <div class="section-label"><span>SIGNAL ANALYSIS</span></div>
+    <div id="signalRows"><div style="color:var(--mid);padding:20px 0;font-size:11px;letter-spacing:1px">LOADING DATA...</div></div>
+  </div>
+</div>
+
+<!-- INDICATORS -->
+<div class="ind-grid">
+  <div class="ind-box">
+    <div class="section-label"><span>RELATIVE STRENGTH INDEX · 14</span></div>
+    <canvas id="rsiChart" height="90"></canvas>
+  </div>
+  <div class="ind-box">
+    <div class="section-label"><span>MACD · 12 / 26 / 9</span></div>
+    <canvas id="macdChart" height="90"></canvas>
+  </div>
+</div>
+
+<!-- BOTTOM -->
+<div class="bottom-grid">
+  <div class="bottom-box">
+    <div class="section-label"><span>STRATEGY RULES</span></div>
+    <div class="strategy-grid">
+      <div class="strategy-card">
+        <div class="s-title" style="color:var(--green)">→ BUY SIGNAL</div>
+        <div class="s-body">RSI below 40<br>MACD golden cross<br>Fast line crosses above signal</div>
+      </div>
+      <div class="strategy-card">
+        <div class="s-title" style="color:var(--red)">→ SELL SIGNAL</div>
+        <div class="s-body">RSI above 60<br>MACD death cross<br>Fast line crosses below signal</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:12px;background:var(--gray);font-size:11px;color:var(--mid);letter-spacing:0.5px;line-height:1.8">
+      TRADE SIZE: 0.001 BTC &nbsp;·&nbsp; INTERVAL: 15MIN &nbsp;·&nbsp; MODE: TESTNET ONLY<br>
+      ⚠ ALL TRADES ARE SIMULATED. NO REAL FUNDS AT RISK.
+    </div>
+  </div>
+  <div class="bottom-box">
+    <div class="section-label"><span>ACTIVITY LOG</span></div>
+    <div class="log-area" id="logArea"><div style="color:var(--mid);font-size:11px;letter-spacing:1px">CONNECTING...</div></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span>BTC TRADING TERMINAL &nbsp;·&nbsp; BINANCE TESTNET</span>
+  <span>RSI + MACD STRATEGY &nbsp;·&nbsp; AUTO-REFRESH <span class="countdown-display" id="footerCountdown">60</span>S</span>
+  <span>2025 © BOT DASHBOARD</span>
+</footer>
+
+<script>
+let priceC, rsiC, macdC;
+const logs = [];
+let cd = 60, cdTimer;
+
+Chart.defaults.color = '#999';
+Chart.defaults.borderColor = '#e8e5de';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 10;
+
+function now8(){ return new Date().toTimeString().slice(0,8); }
+
+function addLog(msg, type='info'){
+  logs.unshift({t:now8(), msg, type});
+  if(logs.length>40) logs.pop();
+  const colors = {buy:'#007a3d',sell:'#c8001a',info:'#b87800',wait:'#999'};
+  document.getElementById('logArea').innerHTML = logs.map(l=>`
+    <div class="log-entry">
+      <span class="log-time">${l.t}</span>
+      <span class="log-mark" style="background:${colors[l.type]||'#999'}"></span>
+      <span class="log-msg">${l.msg}</span>
+    </div>`).join('');
+}
+
+function ema(data, p){
+  const k=2/(p+1), r=new Array(data.length).fill(null);
+  let sum=0,cnt=0,started=false;
+  for(let i=0;i<data.length;i++){
+    if(data[i]==null) continue;
+    sum+=data[i]; cnt++;
+    if(!started&&cnt>=p){ r[i]=sum/p; started=true; }
+    else if(started){ r[i]=data[i]*k+r[i-1]*(1-k); }
+  }
+  return r;
+}
+
+function calcRSI(c,p=14){
+  const r=new Array(c.length).fill(null);
+  for(let i=p;i<c.length;i++){
+    let g=0,l=0;
+    for(let j=i-p+1;j<=i;j++){const d=c[j]-c[j-1];if(d>0)g+=d;else l-=d;}
+    r[i]=100-100/(1+(l===0?Infinity:g/l));
+  }
+  return r;
+}
+
+function calcMACD(c){
+  const e12=ema(c,12),e26=ema(c,26);
+  const ml=c.map((_,i)=>e12[i]!=null&&e26[i]!=null?e12[i]-e26[i]:null);
+  const sig=ema(ml,9);
+  const hist=ml.map((v,i)=>v!=null&&sig[i]!=null?v-sig[i]:null);
+  return{ml,sig,hist};
+}
+
+function startCD(){
+  clearInterval(cdTimer); cd=60;
+  cdTimer=setInterval(()=>{
+    cd--;
+    const s=cd+'S';
+    document.getElementById('countdown').textContent='REFRESH IN '+s;
+    document.getElementById('footerCountdown').textContent=cd;
+    if(cd<=0){loadData();}
+  },1000);
+}
+
+async function loadData(){
+  addLog('FETCHING BINANCE DATA...','info');
+  startCD();
+  try{
+    const[kR,tR]=await Promise.all([
+      fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=100'),
+      fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT')
+    ]);
+    const klines=await kR.json(), tick=await tR.json();
+
+    const labels=klines.map(k=>{const d=new Date(k[0]);return d.getHours()+':'+(d.getMinutes().toString().padStart(2,'0'));});
+    const closes=klines.map(k=>parseFloat(k[4]));
+    const price=closes[closes.length-1];
+    const chg=parseFloat(tick.priceChangePercent);
+    const h24=parseFloat(tick.highPrice),l24=parseFloat(tick.lowPrice);
+
+    // Ticker update
+    const t=document.getElementById('tickerInner');
+    const sep='<span class="ticker-sep">·</span>';
+    const txt=`BTC $${price.toLocaleString('en',{minimumFractionDigits:2})} ${sep} ${chg>=0?'+':''}${chg.toFixed(2)}% ${sep} HIGH $${Math.round(h24).toLocaleString()} ${sep} LOW $${Math.round(l24).toLocaleString()} ${sep} RSI+MACD STRATEGY ${sep} TESTNET MODE ${sep} `;
+    t.innerHTML=txt+txt;
+
+    // Hero
+    document.getElementById('heroPrice').textContent='$'+price.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const hc=document.getElementById('heroChange');
+    hc.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';
+    hc.className='hero-change '+(chg>=0?'up-tag':'down-tag');
+    document.getElementById('navTime').textContent=now8();
+    document.getElementById('heroTime').textContent='LAST UPDATE '+now8();
+    document.getElementById('highNum').textContent='$'+Math.round(h24).toLocaleString()+' / $'+Math.round(l24).toLocaleString();
+    document.getElementById('volSub').textContent='VOL: '+parseFloat(tick.volume).toFixed(0)+' BTC';
+    document.getElementById('chartMeta').textContent=klines.length+' CANDLES';
+
+    // RSI
+    const rsiData=calcRSI(closes);
+    const rN=rsiData[rsiData.length-1];
+    const rEl=document.getElementById('rsiNum');
+    rEl.textContent=rN.toFixed(1);
+    const fill=document.getElementById('rsiFill');
+    fill.style.width=Math.min(rN,100)+'%';
+    if(rN<40){rEl.className='stat-num green';fill.style.background='#007a3d';}
+    else if(rN>60){rEl.className='stat-num red';fill.style.background='#c8001a';}
+    else{rEl.className='stat-num amber';fill.style.background='#b87800';}
+
+    // MACD
+    const{ml,sig,hist}=calcMACD(closes);
+    const mN=ml[ml.length-1],sN=sig[sig.length-1];
+    const mP=ml[ml.length-2],sP=sig[sig.length-2];
+    const gold=mP<sP&&mN>sN, dead=mP>sP&&mN<sN;
+    const mEl=document.getElementById('macdNum');
+    mEl.textContent=mN.toFixed(3);
+    mEl.style.color=mN>sN?'var(--green)':'var(--red)';
+    document.getElementById('macdSub').textContent=gold?'→ GOLDEN CROSS':dead?'→ DEATH CROSS':mN>sN?'ABOVE SIGNAL LINE':'BELOW SIGNAL LINE';
+
+    // Signal
+    const buy=rN<40&&gold, sell=rN>60&&dead;
+    const sEl=document.getElementById('heroSignal');
+    if(buy){
+      sEl.textContent='→ BUY SIGNAL';sEl.className='hero-signal sig-buy';
+      addLog('BUY SIGNAL — RSI '+rN.toFixed(1)+' GOLDEN CROSS @ $'+price.toLocaleString(),'buy');
+    }else if(sell){
+      sEl.textContent='→ SELL SIGNAL';sEl.className='hero-signal sig-sell';
+      addLog('SELL SIGNAL — RSI '+rN.toFixed(1)+' DEATH CROSS @ $'+price.toLocaleString(),'sell');
+    }else{
+      sEl.textContent='WATCHING';sEl.className='hero-signal sig-wait';
+      addLog('WATCHING — RSI '+rN.toFixed(1)+' MACD '+(mN>sN?'↑':'↓')+' @ $'+price.toLocaleString(),'wait');
+    }
+
+    // Signal panel
+    document.getElementById('signalRows').innerHTML=`
+      <div class="signal-row"><span class="signal-key">PRICE</span><span class="signal-val">$${price.toLocaleString('en',{minimumFractionDigits:2})}</span></div>
+      <div class="signal-row"><span class="signal-key">RSI (14)</span><span class="signal-val" style="color:${rN<40?'var(--green)':rN>60?'var(--red)':'var(--amber)'}">${rN.toFixed(2)}</span></div>
+      <div class="signal-row"><span class="signal-key">MACD</span><span class="signal-val">${mN.toFixed(4)}</span></div>
+      <div class="signal-row"><span class="signal-key">SIGNAL LINE</span><span class="signal-val">${sN.toFixed(4)}</span></div>
+      <div class="signal-row"><span class="signal-key">CROSSOVER</span><span class="signal-val"><span class="badge ${gold?'badge-green':dead?'badge-red':'badge-gray'}">${gold?'GOLDEN ✓':dead?'DEATH ✓':'NONE'}</span></span></div>
+      <div class="signal-row"><span class="signal-key">RSI ZONE</span><span class="signal-val"><span class="badge ${rN<40?'badge-green':rN>60?'badge-red':'badge-gray'}">${rN<40?'OVERSOLD ✓':rN>60?'OVERBOUGHT ✓':'NEUTRAL'}</span></span></div>
+      <div class="signal-row" style="border:none"><span class="signal-key">DECISION</span><span class="signal-val" style="font-size:14px;color:${buy?'var(--green)':sell?'var(--red)':'var(--black)'};letter-spacing:2px">${buy?'→ BUY':sell?'→ SELL':'WATCH'}</span></div>
+    `;
+
+    // Charts — last 60
+    const n=60,sl=a=>a.slice(-n);
+    const sl_l=sl(labels),sl_c=sl(closes),sl_r=sl(rsiData),sl_m=sl(ml),sl_s=sl(sig),sl_h=sl(hist);
+    const pc=chg>=0?'#007a3d':'#c8001a';
+    const pcBg=chg>=0?'rgba(0,122,61,0.06)':'rgba(200,0,26,0.06)';
+
+    if(priceC)priceC.destroy();
+    priceC=new Chart(document.getElementById('priceChart').getContext('2d'),{
+      type:'line',
+      data:{labels:sl_l,datasets:[{data:sl_c,borderColor:pc,borderWidth:1.5,backgroundColor:pcBg,fill:true,pointRadius:0,tension:0.3}]},
+      options:{responsive:true,animation:false,
+        plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>'$'+c.raw.toLocaleString('en',{minimumFractionDigits:2})}}},
+        scales:{
+          x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxTicksLimit:8,color:'#999'}},
+          y:{grid:{color:'rgba(0,0,0,0.04)'},position:'right',ticks:{color:'#999',callback:v=>'$'+Math.round(v).toLocaleString()}}
+        }
+      }
+    });
+
+    if(rsiC)rsiC.destroy();
+    rsiC=new Chart(document.getElementById('rsiChart').getContext('2d'),{
+      type:'line',
+      data:{labels:sl_l,datasets:[
+        {data:sl_r,borderColor:'#b87800',borderWidth:1.5,pointRadius:0,tension:0.3,fill:false},
+        {data:sl_l.map(()=>40),borderColor:'rgba(0,122,61,0.4)',borderWidth:1,borderDash:[4,4],pointRadius:0},
+        {data:sl_l.map(()=>60),borderColor:'rgba(200,0,26,0.4)',borderWidth:1,borderDash:[4,4],pointRadius:0}
+      ]},
+      options:{responsive:true,animation:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxTicksLimit:6,color:'#999'}},
+          y:{grid:{color:'rgba(0,0,0,0.04)'},position:'right',min:0,max:100,ticks:{color:'#999'}}
+        }
+      }
+    });
+
+    if(macdC)macdC.destroy();
+    macdC=new Chart(document.getElementById('macdChart').getContext('2d'),{
+      type:'bar',
+      data:{labels:sl_l,datasets:[
+        {type:'line',data:sl_m,borderColor:'#080808',borderWidth:1.5,pointRadius:0,tension:0.3,order:1},
+        {type:'line',data:sl_s,borderColor:'#999',borderWidth:1,pointRadius:0,tension:0.3,borderDash:[3,3],order:2},
+        {type:'bar',data:sl_h,backgroundColor:sl_h.map(v=>v==null?'transparent':v>=0?'rgba(0,122,61,0.6)':'rgba(200,0,26,0.6)'),borderWidth:0,order:3}
+      ]},
+      options:{responsive:true,animation:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxTicksLimit:6,color:'#999'}},
+          y:{grid:{color:'rgba(0,0,0,0.04)'},position:'right',ticks:{color:'#999'}}
+        }
+      }
+    });
+
+    addLog('DATA UPDATED OK','info');
+
+  }catch(e){
+    addLog('ERROR: '+e.message,'sell');
+    document.getElementById('signalRows').innerHTML='<div style="color:#c8001a;font-size:11px;letter-spacing:1px;padding:16px 0">CANNOT CONNECT TO BINANCE API<br>CHECK YOUR INTERNET CONNECTION</div>';
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
